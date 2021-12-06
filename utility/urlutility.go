@@ -10,7 +10,14 @@ type keyValueParameter struct {
 	value string
 }
 
-func AppendQueryString(pageURL string, queryParameters ...keyValueParameter) string {
+func KeyValueParameter(key string, value string) *keyValueParameter {
+	return &keyValueParameter{
+		key:   key,
+		value: value,
+	}
+}
+
+func AppendQueryString(pageURL string, queryParameters ...*keyValueParameter) string {
 	visitURL, err := url.Parse(pageURL)
 	if err != nil {
 		log.Fatal(err)
@@ -19,7 +26,7 @@ func AppendQueryString(pageURL string, queryParameters ...keyValueParameter) str
 	originalQueryString := visitURL.Query()
 
 	for _, queryParameter := range queryParameters {
-		originalQueryString.Add(queryParameter.key, queryParameter.value)
+		originalQueryString.Set(queryParameter.key, queryParameter.value)
 	}
 
 	visitURL.RawQuery = originalQueryString.Encode()
