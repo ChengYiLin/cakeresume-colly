@@ -1,4 +1,4 @@
-package urlutility
+package urlUtility
 
 import (
 	"log"

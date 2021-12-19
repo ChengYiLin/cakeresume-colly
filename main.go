@@ -4,15 +4,15 @@ import (
 	"fmt"
 	"strings"
 
-	urlutility "github.com/ChengYiLin/cakeresume-colly/utility"
+	urlUtility "github.com/ChengYiLin/cakeresume-colly/utility"
 	"github.com/PuerkitoBio/goquery"
 	"github.com/gocolly/colly"
 )
 
 func main() {
 	pageURL := "https://www.cakeresume.com/companies/pinkoi/jobs/frontend-engineer-d15130"
-	languageParameter := urlutility.KeyValueParameter("locale", "en")
-	visitURL := urlutility.AppendQueryString(pageURL, languageParameter)
+	languageParameter := urlUtility.KeyValueParameter("locale", "en")
+	visitURL := urlUtility.AppendQueryString(pageURL, languageParameter)
 
 	// Create Colly Collector For CakeResume
 	c := colly.NewCollector(
