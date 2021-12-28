@@ -18,6 +18,7 @@ type SalaryData struct {
 	MinSalary int
 	MaxSalary int
 	Currency  string
+	Skills    string
 }
 
 func getSalaryFromText(salaryText string, timeUnit string) int {
@@ -52,7 +53,7 @@ func main() {
 	csvData, _ := os.Create("urlCollector.csv")
 	csvWriter := csv.NewWriter(csvData)
 	ColumnNameList := [][]string{
-		{"Title", "Company", "Link", "MinSalary", "MaxSalary", "Currency"},
+		{"Title", "Company", "Link", "MinSalary", "MaxSalary", "Currency, Skills"},
 	}
 	csvWriter.WriteAll(ColumnNameList)
 
@@ -117,9 +118,12 @@ func main() {
 			}
 		})
 
+		jobCollector.OnHTML(".labels .label", func(h *colly.HTMLElement) {
+			recordData.Skills += h.Text + ", "
+		})
+
 		jobCollector.Visit(recordData.Link)
 
-		fmt.Println("Write")
 		csvWriter.Write([]string{
 			recordData.Title,
 			recordData.Company,
@@ -127,6 +131,7 @@ func main() {
 			strconv.Itoa(recordData.MinSalary),
 			strconv.Itoa(recordData.MaxSalary),
 			recordData.Currency,
+			recordData.Skills,
 		})
 		csvWriter.Flush()
 	})
@@ -142,10 +147,6 @@ func main() {
 	})
 
 	for {
-		if pageNum == 4 {
-			break
-		}
-
 		if isUrlCollectionFinished {
 			break
 		}
@@ -155,10 +156,4 @@ func main() {
 
 	urlCollector.Wait()
 	defer csvData.Close()
-
-	// 	// 技能 tag
-	// 	h.DOM.Find(".labels .label").Each(func(i int, s *goquery.Selection) {
-	// 		// fmt.Println(s.Text())
-	// 	})
-	// })
 }
