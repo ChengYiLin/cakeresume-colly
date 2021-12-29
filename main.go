@@ -21,6 +21,22 @@ type SalaryData struct {
 	Skills    string
 }
 
+type FrontendSkills struct {
+	html       bool
+	css        bool
+	javascript bool
+	typescript bool
+	jquery     bool
+	svelte     bool
+	react      bool
+	vue        bool
+	angular    bool
+	angularjs  bool
+	git        bool
+	unittest   bool
+	webpack    bool
+}
+
 func getSalaryFromText(salaryText string, timeUnit string) int {
 	moneyUnit := string(salaryText[len(salaryText)-1])
 	moneyNum, err := strconv.ParseFloat(salaryText[:len(salaryText)-1], 32)
@@ -44,6 +60,25 @@ func getSalaryFromText(salaryText string, timeUnit string) int {
 	}
 }
 
+func extractSkillsFromText(text string, skillsList []string, skillsData map[string]string) map[string]string {
+	data := strings.ToLower(text)
+
+	for _, skill := range skillsList {
+		if skillsData[skill] == "1" {
+			continue
+		}
+
+		if strings.Contains(data, skill) {
+			skillsData[skill] = "1"
+			continue
+		}
+
+		skillsData[skill] = "0"
+	}
+
+	return skillsData
+}
+
 func main() {
 	var searchPageURlBase string = "https://www.cakeresume.com/jobs?ref=navs_jobs&refinementList[profession][0]=it_front-end-engineer&refinementList[job_type][0]=full_time&page="
 	var pageNum int = 1
@@ -51,27 +86,26 @@ func main() {
 
 	// Set up the Column
 	baseColumns := []string{"Title", "Company", "Link", "MinSalary", "MaxSalary", "Currency"}
-	frontendLanguagues := []string{"html", "css", "javascript", "typescript", "webpack", "jquery"}
+	frontendLanguagues := []string{"html", "css", "javascript", "typescript", "jquery"}
 	frontendFramworks := []string{"svelte", "react", "vue", "angular", "angularjs"}
 	// cssFramworks := []string{"tailwind", "materialui", "antdesign", "bootstrap"}
-	others := []string{"git", "unittest"}
+	others := []string{"git", "unittest", "webpack"}
 
 	frontendSkills := [][]string{
-		baseColumns,
 		frontendLanguagues,
 		frontendFramworks,
 		others,
 	}
 
-	var columnList []string
+	var skillsList []string
 	for _, r := range frontendSkills {
-		columnList = append(columnList, r...)
+		skillsList = append(skillsList, r...)
 	}
 
 	// Setup CSV File
 	csvData, _ := os.Create("urlCollector.csv")
 	csvWriter := csv.NewWriter(csvData)
-	ColumnNameList := [][]string{columnList}
+	ColumnNameList := [][]string{append(baseColumns, skillsList...)}
 	csvWriter.WriteAll(ColumnNameList)
 
 	// Create Colly Collector For CakeResume
@@ -92,16 +126,33 @@ func main() {
 	// Get Job URL
 	urlCollector.OnHTML(".job-list-item-content", func(h *colly.HTMLElement) {
 		var recordData SalaryData
+		var skillsData = map[string]string{
+			"html":       "0",
+			"css":        "0",
+			"javascript": "0",
+			"typescript": "0",
+			"jquery":     "0",
+			"svelte":     "0",
+			"react":      "0",
+			"vue":        "0",
+			"angular":    "0",
+			"angularjs":  "0",
+			"git":        "0",
+			"unittest":   "0",
+			"webpack":    "0",
+		}
+
 		jobCollector := urlCollector.Clone()
 
 		jobTitleDOM := h.DOM.Find(".job-link")
 		jobCompanyDOM := h.DOM.Find(".page-name a")
 
+		// Get Job Inform
 		recordData.Link, _ = jobTitleDOM.Attr("href")
 		recordData.Title = jobTitleDOM.Text()
 		recordData.Company = jobCompanyDOM.Text()
 
-		// Web Scrape Job Detail
+		// Get Job Salary
 		jobCollector.OnHTML(".job-meta-section", func(h *colly.HTMLElement) {
 			// Step 0. 取得頁面元素
 			salaryText := h.DOM.Find(".job-salary").Text()
@@ -135,10 +186,20 @@ func main() {
 			}
 		})
 
-		jobCollector.OnHTML(".labels .label", func(h *colly.HTMLElement) {
-			recordData.Skills += h.Text + ", "
+		// Get Job Skills
+		jobCollector.OnHTML("#job-description", func(h *colly.HTMLElement) {
+			extractSkillsFromText(h.DOM.Text(), skillsList, skillsData)
 		})
 
+		jobCollector.OnHTML("#requirements", func(h *colly.HTMLElement) {
+			extractSkillsFromText(h.DOM.Text(), skillsList, skillsData)
+		})
+
+		jobCollector.OnHTML(".labels .label", func(h *colly.HTMLElement) {
+			extractSkillsFromText(h.DOM.Text(), skillsList, skillsData)
+		})
+
+		// Visit the Detail Page
 		jobCollector.Visit(recordData.Link)
 
 		csvWriter.Write([]string{
@@ -148,7 +209,19 @@ func main() {
 			strconv.Itoa(recordData.MinSalary),
 			strconv.Itoa(recordData.MaxSalary),
 			recordData.Currency,
-			recordData.Skills,
+			skillsData["html"],
+			skillsData["css"],
+			skillsData["javascript"],
+			skillsData["typescript"],
+			skillsData["jquery"],
+			skillsData["svelte"],
+			skillsData["react"],
+			skillsData["vue"],
+			skillsData["angular"],
+			skillsData["angularjs"],
+			skillsData["git"],
+			skillsData["unittest"],
+			skillsData["webpack"],
 		})
 		csvWriter.Flush()
 	})
