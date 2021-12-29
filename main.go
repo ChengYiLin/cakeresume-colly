@@ -49,12 +49,29 @@ func main() {
 	var pageNum int = 1
 	var isUrlCollectionFinished bool = false
 
+	// Set up the Column
+	baseColumns := []string{"Title", "Company", "Link", "MinSalary", "MaxSalary", "Currency"}
+	frontendLanguagues := []string{"html", "css", "javascript", "typescript", "webpack", "jquery"}
+	frontendFramworks := []string{"svelte", "react", "vue", "angular", "angularjs"}
+	// cssFramworks := []string{"tailwind", "materialui", "antdesign", "bootstrap"}
+	others := []string{"git", "unittest"}
+
+	frontendSkills := [][]string{
+		baseColumns,
+		frontendLanguagues,
+		frontendFramworks,
+		others,
+	}
+
+	var columnList []string
+	for _, r := range frontendSkills {
+		columnList = append(columnList, r...)
+	}
+
 	// Setup CSV File
 	csvData, _ := os.Create("urlCollector.csv")
 	csvWriter := csv.NewWriter(csvData)
-	ColumnNameList := [][]string{
-		{"Title", "Company", "Link", "MinSalary", "MaxSalary", "Currency, Skills"},
-	}
+	ColumnNameList := [][]string{columnList}
 	csvWriter.WriteAll(ColumnNameList)
 
 	// Create Colly Collector For CakeResume
@@ -86,7 +103,7 @@ func main() {
 
 		// Web Scrape Job Detail
 		jobCollector.OnHTML(".job-meta-section", func(h *colly.HTMLElement) {
-			// 	// Step 0. 取得頁面元素
+			// Step 0. 取得頁面元素
 			salaryText := h.DOM.Find(".job-salary").Text()
 			if len(salaryText) == 0 {
 				recordData.MinSalary = 0
