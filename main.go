@@ -3,10 +3,10 @@ package main
 import (
 	"encoding/csv"
 	"fmt"
-	"log"
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gocolly/colly"
 )
@@ -37,11 +37,24 @@ type FrontendSkills struct {
 	webpack    bool
 }
 
+func getFrontendSkillList() [][]string {
+	frontendLanguagues := []string{"html", "css", "javascript", "typescript", "jquery"}
+	frontendFramworks := []string{"svelte", "react", "vue", "angular", "angularjs"}
+	// cssFramworks := []string{"tailwind", "materialui", "antdesign", "bootstrap"}
+	others := []string{"git", "unittest", "webpack"}
+
+	return [][]string{
+		frontendLanguagues,
+		frontendFramworks,
+		others,
+	}
+}
+
 func getSalaryFromText(salaryText string, timeUnit string) int {
 	moneyUnit := string(salaryText[len(salaryText)-1])
 	moneyNum, err := strconv.ParseFloat(salaryText[:len(salaryText)-1], 32)
 	if err != nil {
-		log.Fatal(err)
+		return 0
 	}
 
 	if timeUnit == "year" {
@@ -86,16 +99,7 @@ func main() {
 
 	// Set up the Column
 	baseColumns := []string{"Title", "Company", "Link", "MinSalary", "MaxSalary", "Currency"}
-	frontendLanguagues := []string{"html", "css", "javascript", "typescript", "jquery"}
-	frontendFramworks := []string{"svelte", "react", "vue", "angular", "angularjs"}
-	// cssFramworks := []string{"tailwind", "materialui", "antdesign", "bootstrap"}
-	others := []string{"git", "unittest", "webpack"}
-
-	frontendSkills := [][]string{
-		frontendLanguagues,
-		frontendFramworks,
-		others,
-	}
+	frontendSkills := getFrontendSkillList()
 
 	var skillsList []string
 	for _, r := range frontendSkills {
@@ -228,7 +232,7 @@ func main() {
 
 	urlCollector.Limit(&colly.LimitRule{
 		DomainGlob: "*cakeresume.*",
-		// Delay:      1 * time.Second,
+		Delay:      1 * time.Second,
 	})
 
 	urlCollector.OnError(func(r *colly.Response, e error) {
